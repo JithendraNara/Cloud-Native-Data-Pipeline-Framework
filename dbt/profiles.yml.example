@@ -1,0 +1,21 @@
+data_pipeline:
+  target: dev
+  outputs:
+    dev:
+      type: iceberg
+      catalog: glue
+      catalog_name: glue
+      catalog_region: us-east-1
+      warehouse: "{{ env_var('S3_WAREHOUSE', 's3://data-pipeline-warehouse') }}"
+
+    local:
+      # DuckDB-backed local dev - zero AWS needed
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', 'dbt.duckdb') }}"
+
+    prod:
+      type: iceberg
+      catalog: glue
+      catalog_name: glue
+      catalog_region: us-east-1
+      warehouse: "{{ env_var('S3_WAREHOUSE', 's3://data-pipeline-warehouse-prod') }}"

@@ -1,0 +1,20 @@
+version: 2
+
+# Sources for the Iceberg raw tables (prod) / DuckDB raw tables (local dev)
+sources:
+  - name: bronze
+    description: "Raw event stream, written by the ingestion Lambda (PyIceberg) in prod, or by scripts/local_seed.py in local dev."
+    schema: raw_dev
+    tables:
+      - name: raw_events
+        description: "Append-only event log with raw_payload."
+        columns:
+          - name: event_id
+            tests: [not_null, unique]
+          - name: user_id
+          - name: event_type
+          - name: amount
+          - name: ingested_at
+            tests: [not_null]
+          - name: source
+          - name: raw_payload

@@ -1,0 +1,55 @@
+# Build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/dbt.duckdb
+dbt/dbt.duckdb.wal
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform.tfstate.lock.info
+terraform/.terraform.lock.hcl
+crash.log
+crash.*.log
+
+# Local dev
+sample/events.json
+*.parquet
+*.avro
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# Secrets
+.env
+.env.local
+*.tfvars
+!.env.example
+!terraform.tfvars.example

@@ -1,0 +1,5 @@
+# Example tfvars - copy to terraform.tfvars and fill in
+environment = "dev"
+aws_region  = "us-east-1"
+project_name = "data-pipeline"
+alarm_email = "you@example.com"

@@ -1,0 +1,39 @@
+name: 'data_pipeline'
+version: '1.0.0'
+config-version: 2
+
+# dbt Fusion engine + Iceberg v3 on S3 (Bronze/Silver/Gold)
+# Local dev target uses DuckDB; prod uses Iceberg via Glue catalog.
+
+profile: 'data_pipeline'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+vars:
+  raw_database: "{{ env_var('ICEBERG_NAMESPACE', 'raw_dev') }}"
+  silver_database: "{{ env_var('ICEBERG_SILVER_NAMESPACE', 'silver_dev') }}"
+  gold_database: "{{ env_var('ICEBERG_GOLD_NAMESPACE', 'gold_dev') }}"
+  s3_warehouse: "{{ env_var('S3_WAREHOUSE', 's3://data-pipeline-warehouse') }}"
+
+# Per-model configs use the +schema pattern, which works for both DuckDB (local)
+# and Iceberg/Glue (prod). For Iceberg prod, add +file_format: iceberg in model configs.
+
+models:
+  data_pipeline:
+    staging:
+      +materialized: view
+    silver:
+      +materialized: table
+    gold:
+      +materialized: table
+    marts:
+      +materialized: table

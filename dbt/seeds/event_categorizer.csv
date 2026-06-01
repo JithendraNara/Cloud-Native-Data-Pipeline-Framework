@@ -1,0 +1,11 @@
+event_type,event_category
+click,engagement
+view,engagement
+scroll,engagement
+purchase,revenue
+refund,revenue
+subscribe,revenue
+unsubscribe,revenue
+signup,lifecycle
+login,lifecycle
+logout,lifecycle

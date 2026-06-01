@@ -1,0 +1,83 @@
+# Local dev stack - everything in containers, no AWS needed
+# MinIO = S3, Iceberg REST = catalog, DuckDB = query engine for the AI analyst
+services:
+  minio:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # Web console
+    volumes:
+      - minio-data:/data
+
+  mc:
+    image: minio/mc:latest
+    depends_on: [minio]
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc mb -p local/raw local/silver local/gold local/warehouse || true;
+      exit 0;
+      "
+
+  iceberg-rest:
+    image: tabulario/iceberg-rest:1.6.0
+    depends_on: [minio, postgres]
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_REGION: us-east-1
+      AWS_S3_ENDPOINT: http://minio:9000
+      CATALOG_WAREHOUSE: s3://warehouse/
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      JDBC_URI: jdbc:postgresql://postgres:5432/iceberg
+      JDBC_USER: iceberg
+      JDBC_PASSWORD: iceberg
+    ports:
+      - "8181:8181"
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: iceberg
+      POSTGRES_PASSWORD: iceberg
+      POSTGRES_DB: iceberg
+    volumes:
+      - iceberg-pg:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  ai-analyst:
+    build: ./ai_analyst
+    environment:
+      ICEBERG_GOLD_NAMESPACE: gold
+      MINIMAX_API_KEY: "${MINIMAX_API_KEY:-}"
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_ENDPOINT_URL: http://minio:9000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - minio
+
+  ingestion:
+    build:
+      context: ./lambda/ingestion
+    environment:
+      ENVIRONMENT: local
+      RAW_BUCKET: raw
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_ENDPOINT_URL: http://minio:9000
+      PYICEBERG_CATALOG_URI: http://iceberg-rest:8181
+    depends_on:
+      - minio
+      - iceberg-rest
+
+volumes:
+  minio-data:
+  iceberg-pg:

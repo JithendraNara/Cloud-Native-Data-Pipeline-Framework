@@ -1,0 +1,28 @@
+version: 2
+
+# dbt data tests - run as part of CI to enforce contract on Gold tables
+models:
+  - name: daily_user_revenue
+    description: "Daily revenue per user, BI-ready."
+    columns:
+      - name: event_date
+        tests: [not_null]
+      - name: user_id
+        tests: [not_null]
+      - name: gross_revenue
+        tests:
+          - not_null
+      - name: event_count
+        tests:
+          - not_null
+
+  - name: event_type_funnel
+    description: "Event funnel per day."
+    columns:
+      - name: event_date
+        tests: [not_null]
+      - name: event_type
+        tests: [not_null]
+      - name: total_events
+        tests:
+          - not_null
