@@ -213,13 +213,38 @@ curl -X POST http://localhost:8000/ask \
 # → {
 #     "sql": "SELECT event_type, AVG(amount) ... FROM ... GROUP BY 1",
 #     "rows": [...],
-#     "answer": "Purchase events had the highest avg amount at $87.42..."
+#     "answer": "Purchase events had the highest avg amount at $87.42...",
+#     "sources": [{"type": "table", "name": "daily_user_revenue"}]
 #   }
+
+# Multi-turn conversation (v2: session-aware, with memory)
+SESSION_ID=$(uuidgen)
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d "{\"session_id\": \"$SESSION_ID\", \"message\": \"What was top revenue last week?\"}"
+# → turn_count: 2
+
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d "{\"session_id\": \"$SESSION_ID\", \"message\": \"Now filter to u001 only\"}"
+# → SQL is generated with full conversation context
+# → turn_count: 4
+
+# Streaming (server-sent events, tokens flow as the model generates)
+curl -N -X POST http://localhost:8000/ask/stream \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Why did revenue spike on 2026-05-30?"}'
+# → events: sql → rows → token → token → token → done
 
 # Multi-step plan (agent)
 curl -X POST http://localhost:8000/plan \
   -H "Content-Type: application/json" \
   -d '{"goal": "Diagnose why revenue dropped 20% last week"}'
+
+# Session management
+curl http://localhost:8000/session/$SESSION_ID           # turn count, TTL
+curl -X DELETE http://localhost:8000/session/$SESSION_ID  # clear
+curl http://localhost:8000/stats                          # store stats
 ```
 
 **Why it matters:** the analyst doesn't just generate SQL. It **executes** it, **summarizes** the result, and can **chain** multiple Q&A steps into a single diagnostic flow. This is the agentic BI pattern the entire industry is moving toward in 2026.
